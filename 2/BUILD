@@ -1,6 +1,11 @@
 cc_test(
-  name = "main_test",
+  name = "generator_test",
   size = "small",
-  srcs = ["main_test.cpp"],
+  srcs = ["generator_test.cpp", "generator.cpp"],
   deps = ["@com_google_googletest//:gtest_main"],
+)
+
+cc_binary(
+  name = "generator",
+  srcs = ["generator.cpp"],
 )
