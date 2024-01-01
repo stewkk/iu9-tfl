@@ -1,0 +1,18 @@
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+http_archive(
+  name = "com_google_googletest",
+  urls = ["https://github.com/google/googletest/archive/5b7fd63d6d69f1754d5f3be956949484ebac06d5.zip"],
+  sha256 = "60578d3b6474bba882e2f8368b38d21a154665930a15b23996b197262b9a501f",
+  strip_prefix = "googletest-5b7fd63d6d69f1754d5f3be956949484ebac06d5",
+)
+
+http_archive(
+    name = "com_github_nelhage_rules_boost",
+    url = "https://github.com/nelhage/rules_boost/archive/ce2b65fd6d1494aadb2d8c99ce26aa222ab72486.tar.gz",
+    sha256 = "f3038ed0e19f68920396fbe1a824cde8ab321e131c9fe59826f8ee510b958569",
+    strip_prefix = "rules_boost-ce2b65fd6d1494aadb2d8c99ce26aa222ab72486",
+)
+
+load("@com_github_nelhage_rules_boost//:boost/boost.bzl", "boost_deps")
+boost_deps()
