@@ -1,8 +1,7 @@
 cc_test(
   name = "main_test",
-  size = "enormous",
-  timeout = "moderate",
+  size = "small",
   srcs = ["main_test.cpp"],
-  deps = ["@com_google_googletest//:gtest_main"],
+  deps = ["@com_google_googletest//:gtest_main", "@com_github_ericniebler_range-v3//:range-v3", "@fmt"],
 )
 
