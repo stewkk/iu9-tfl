@@ -58,6 +58,10 @@ class Smt {
             return Serialize(composition.substr(0, composition.size()-1), res);
         }
 
+        std::string Serialize(const std::string& lhs, const std::string& rhs) {
+            return Serialize(Serialize(lhs), Serialize(rhs));
+        }
+
         std::string Serialize(const Components& lhs, const Components& rhs) {
             return views::zip(lhs, rhs) | views::transform([](const auto& el) {
                 return fmt::format("(assert (agt {} {}))", el.first, el.second);
