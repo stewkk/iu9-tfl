@@ -42,7 +42,7 @@ TEST(ParserTest, NulloptOnEmptyString) {
 TEST(SerializerTest, SerializesSingleVariable) {
     Smt s;
 
-    auto res = s.Serialize("f");
+    auto res = s.GetComponents("f");
 
     ASSERT_THAT(res, Eq(Smt::Components{"f1", "f2", "f3", "f4", "f5", "f6"}));
 }
@@ -50,7 +50,7 @@ TEST(SerializerTest, SerializesSingleVariable) {
 TEST(SerializerTest, SerializesSecondVariable) {
     Smt s;
 
-    auto res = s.Serialize("g"sv, Smt::Components{"f1", "f2", "f3", "f4", "f5", "f6"});
+    auto res = s.GetComponents("g"sv, Smt::Components{"f1", "f2", "f3", "f4", "f5", "f6"});
 
     ASSERT_THAT(res, Eq(Smt::Components{
             "(aadd (amul g1 f1) (amul g2 f3))",
@@ -65,7 +65,7 @@ TEST(SerializerTest, SerializesSecondVariable) {
 TEST(SerializerTest, SerializesInequality) {
     Smt s;
 
-    auto res = s.Serialize(Smt::Components{"f1", "f2", "f3", "f4", "f5", "f6"},
+    auto res = s.GetInequalitiesByComponents(Smt::Components{"f1", "f2", "f3", "f4", "f5", "f6"},
                            Smt::Components{"g1", "g2", "g3", "g4", "g5", "g6"});
 
     ASSERT_THAT(res, Eq("(assert (agt f1 g1))\n(assert (agt f2 g2))\n\

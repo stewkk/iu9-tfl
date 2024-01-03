@@ -8,11 +8,10 @@
 
 std::int32_t main(std::int32_t argc, char* argv[]) {
     std::ostringstream out;
-    // Define functions
     out << "(set-logic QF_NIA)\n";
-    out << "(declare-fun aadd ((a Int) (b Int) Int ()))\n";
-    out << "(declare-fun amul ((a Int) (b Int) Int ()))\n";
-    out << "(declare-fun agt ((a Int) (b Int) Int ()))\n";
+    out << "(define-fun aadd ((a Int) (b Int)) Int (ite (> a b) a b))\n";
+    out << "(define-fun amul ((a Int) (b Int)) Int (ite (or (= a -1) (= b -1)) -1 (+ a b)))\n";
+    out << "(define-fun agt ((a Int) (b Int)) Bool (or (> a b) (and (= a -1) (= b -1))))\n";
 
     Parser p;
     std::string line;
@@ -23,18 +22,12 @@ std::int32_t main(std::int32_t argc, char* argv[]) {
             continue;
         }
         auto& [lhs, rhs] = rule.value();
-
-        s.Serialize(lhs);
-
-        // Define variablies
-
-        // Asserts on variables
-
-        // Asserts on inequalities
+        out << s.GetVariables(lhs) << '\n';
+        out << s.GetVariables(rhs) << '\n';
+        out << s.GetInequalities(lhs, rhs) << '\n';
     }
 
-    // Check-sat
-
+    out << "(check-sat)\n(get-model)\n(exit)\n";
     std::cout << out.str();
     return 0;
 }
