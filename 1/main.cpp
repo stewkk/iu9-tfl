@@ -4,9 +4,7 @@
 #include "parser.hpp"
 #include "serializer.hpp"
 
-// TODO: stress tests
-
-std::int32_t main(std::int32_t argc, char* argv[]) {
+std::int32_t main() {
     std::ostringstream out;
     out << "(set-logic QF_NIA)\n";
     out << "(define-fun aadd ((a Int) (b Int)) Int (ite (> a b) a b))\n";
