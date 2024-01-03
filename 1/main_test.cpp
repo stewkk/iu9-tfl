@@ -1,13 +1,7 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
-#include <algorithm>
-#include <array>
 #include <optional>
-#include <regex>
-#include <stdexcept>
-#include <string>
-#include <string_view>
 #include <utility>
 
 #include <fmt/format.h>
@@ -17,29 +11,11 @@
 #include <range/v3/view/transform.hpp>
 #include <range/v3/view/zip.hpp>
 
+#include "parser.hpp"
+#include "serializer.hpp"
+
 using testing::Eq;
 using namespace std::literals;
-using namespace ranges;
-
-class Parser {
-    public:
-        std::optional<std::pair<std::string, std::string>> Parse(const std::string& s) {
-          if (std::all_of(s.begin(), s.end(), isspace)) {
-            return std::nullopt;
-          }
-
-          std::regex input_pattern(R"(\s*([a-zA-Z]+)\s*->\s*([a-zA-Z]+)\s*)",
-                                   std::regex::ECMAScript);
-          std::smatch match;
-
-          if (!std::regex_match(s, match, input_pattern)) {
-            throw std::invalid_argument("Invalid input format");
-          }
-          std::string l = match[1].str();
-          std::string r = match[2].str();
-          return std::make_pair(l, r);
-        }
-};
 
 TEST(ParserTest, ParsesSimpleString) {
     Parser p;
@@ -62,58 +38,6 @@ TEST(ParserTest, NulloptOnEmptyString) {
 
     ASSERT_THAT(res, Eq(std::nullopt));
 }
-
-class Smt {
-    public:
-        using Components = std::array<std::string, 6>;
-
-        Components Serialize(const std::string& composition) {
-            if (composition.empty()) {
-                throw std::invalid_argument{"Compostion should not be empty"};
-            }
-            auto func = composition.back();
-            Components components;
-            for (auto&& [i, component] : components | views::enumerate) {
-                component = std::string{func} + std::to_string(i+1);
-            }
-            return Serialize(composition.substr(0, composition.size()-1), components);
-        }
-
-        Components Serialize(std::string_view composition, const Components& components) {
-            if (composition.empty()) {
-                return components;
-            }
-            Components res = components;
-            std::string func{composition.back()};
-            constexpr auto matrix_component_format = "(aadd (amul {}{} {}) (amul {}{} {}))";
-            res[0] = fmt::format(matrix_component_format, func, "1", components[0], func, "2", components[2]);
-            res[1] = fmt::format(matrix_component_format, func, "1", components[1], func, "2", components[3]);
-            res[2] = fmt::format(matrix_component_format, func, "3", components[0], func, "4", components[2]);
-            res[3] = fmt::format(matrix_component_format, func, "3", components[1], func, "4", components[3]);
-            constexpr auto vector_component_format = "(aadd (aadd (amul {}{} {}) (amul {}{} {})) {}{})";
-            res[4] = fmt::format(vector_component_format,
-                                    func, "1",
-                                    components[4],
-                                    func, "2",
-                                    components[5],
-                                    func, "5"
-                                 );
-            res[5] = fmt::format(vector_component_format,
-                                    func, "3",
-                                    components[4],
-                                    func, "4",
-                                    components[5],
-                                    func, "6"
-                                 );
-            return Serialize(composition.substr(0, composition.size()-1), res);
-        }
-
-        std::string Serialize(const Components& lhs, const Components& rhs) {
-            return views::zip(lhs, rhs) | views::transform([](const auto& el) {
-                return fmt::format("(assert (agt {} {}))", el.first, el.second);
-            }) | views::join('\n') | to<std::string>();
-        }
-};
 
 TEST(SerializerTest, SerializesSingleVariable) {
     Smt s;
