@@ -1,28 +1,24 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <iostream>
 #include <random>
 #include <sstream>
 #include <string>
 #include <unordered_set>
 #include <vector>
+#include <queue>
 
 using std::istringstream;
 using testing::Contains;
 using testing::Eq;
-
-struct Transition {
-  std::string symbols;
-  std::size_t state;
-
-  bool operator==(const Transition &other) const = default;
-};
+using testing::MatchesRegex;
 
 struct Automata {
   std::vector<std::string> states;
   std::unordered_set<std::size_t> accepting_states;
-  std::vector<std::vector<Transition>> transitions;
+  std::vector<std::vector<std::string>> transitions;
 
   bool operator==(const Automata &other) const = default;
 };
@@ -42,14 +38,10 @@ Automata ReadAutomata(std::istream &in) {
     in >> state;
     res.accepting_states.insert(state);
   }
-  res.transitions.assign(n, {});
+  res.transitions.assign(n, std::vector<std::string>(n));
   for (auto &row : res.transitions) {
-    for (std::size_t i = 0; i < n; i++) {
-      std::string transition;
-      in >> transition;
-      if (transition != "0") {
-        row.push_back({transition, i});
-      }
+    for (auto& el : row) {
+      in >> el;
     }
   }
   return res;
@@ -61,8 +53,10 @@ ReachabilityMatrix GetReachabilityMatrix(const Automata &a) {
   const auto n = a.states.size();
   std::vector<std::vector<bool>> dp(n, std::vector<bool>(n));
   for (std::size_t i = 0; i < n; i++) {
-    for (auto &el : a.transitions[i]) {
-      dp[i][el.state] = true;
+    for (std::size_t j = 0; j < n; j++) {
+      if (a.transitions[i][j] != "0") {
+        dp[i][j] = true;
+      }
     }
   }
   for (std::size_t k = 0; k < n; k++) {
@@ -99,7 +93,7 @@ std::vector<std::size_t> GetRandomStateSequence(const ReachabilityMatrix &reacha
   }
   if (!automata.accepting_states.contains(res.back())) {
     for (auto next : reachability[res.back()]) {
-      // NOTE: choose random final state here?
+      // TODO: choose random final state here?
       if (automata.accepting_states.contains(next)) {
         res.push_back(next);
       }
@@ -111,6 +105,39 @@ std::vector<std::size_t> GetRandomStateSequence(const ReachabilityMatrix &reacha
   return res;
 }
 
+std::string GetRandomSegment(std::size_t start, std::size_t end, const Automata& a) {
+  std::queue<std::size_t> q;
+  std::vector<std::int32_t> used(a.states.size(), -1);
+  q.push(static_cast<int32_t>(start));
+  used[start] = start;
+  while (!q.empty()) {
+    auto cur = q.front();
+    q.pop();
+    if (cur == end) {
+      std::ostringstream out;
+      auto prev = used[cur];
+      while (prev != cur) {
+        std::random_device rd;
+        std::mt19937 generator(rd());
+        auto transition = a.transitions[prev][cur];
+        auto symbol = transition[std::uniform_int_distribution<std::int32_t>(0, transition.size()-1)(generator)];
+        out << symbol;
+        cur = prev;
+      }
+      auto tmp = out.str();
+      std::reverse(tmp.begin(), tmp.end());
+      return tmp;
+    }
+    for (std::size_t next = 0; next < a.states.size(); next++) {
+      if (a.transitions[cur][next] != "0" && used[next] == -1) {
+        used[next] = cur;
+        q.push(next);
+      }
+    }
+  }
+  throw std::logic_error{"GetRandomSegment failed"};
+}
+
 TEST(StringGeneratorTest, ReadsAutomata) {
   istringstream input{"2\n(bb)* b(bb)*\n1 0\n0 ab\nb 0\n"};
 
@@ -119,8 +146,8 @@ TEST(StringGeneratorTest, ReadsAutomata) {
   ASSERT_THAT(got, Eq(Automata{{"(bb)*", "b(bb)*"},
                                {0},
                                {
-                                   {{"ab", 1}},
-                                   {{"b", 0}},
+                 {"0", "ab"},
+                 {"b", "0"},
                                }}));
 }
 
@@ -128,8 +155,8 @@ TEST(StringGeneratorTest, BuildsReachabilityMatrix) {
   Automata a{{"(bb)*", "b(bb)*"},
              {0},
              {
-                 {{"ab", 1}},
-                 {{"b", 0}},
+                 {"0", "ab"},
+                 {"b", "0"},
              }};
 
   ReachabilityMatrix got = GetReachabilityMatrix(a);
@@ -141,8 +168,8 @@ TEST(StringGeneratorTest, BuildsRandomStateSequence) {
   Automata a{{"(bb)*", "b(bb)*"},
              {0},
              {
-                 {{"ab", 1}},
-                 {{"b", 0}},
+                 {"0", "ab"},
+                 {"b", "0"},
              }};
   ReachabilityMatrix reachability = GetReachabilityMatrix(a);
 
@@ -152,3 +179,15 @@ TEST(StringGeneratorTest, BuildsRandomStateSequence) {
   EXPECT_THAT(a.accepting_states, Contains(got.back()));
 }
 
+TEST(StringGeneratorTest, BuildsStringsFromTwoStates) {
+  Automata a{{"(bb)*", "b(bb)*"},
+             {0},
+             {
+                 {"0", "ab"},
+                 {"b", "0"},
+             }};
+
+  auto got = GetRandomSegment(0, 1, a);
+
+  ASSERT_THAT(got, MatchesRegex(R"(a|b(b(a|b))*)"));
+}
