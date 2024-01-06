@@ -3,12 +3,12 @@
 
 #include <algorithm>
 #include <iostream>
+#include <queue>
 #include <random>
 #include <sstream>
 #include <string>
 #include <unordered_set>
 #include <vector>
-#include <queue>
 
 using std::istringstream;
 using testing::Contains;
@@ -40,7 +40,7 @@ Automata ReadAutomata(std::istream &in) {
   }
   res.transitions.assign(n, std::vector<std::string>(n));
   for (auto &row : res.transitions) {
-    for (auto& el : row) {
+    for (auto &el : row) {
       in >> el;
     }
   }
@@ -78,7 +78,7 @@ ReachabilityMatrix GetReachabilityMatrix(const Automata &a) {
 }
 
 std::vector<std::size_t> GetRandomStateSequence(const ReachabilityMatrix &reachability,
-                                                 const Automata &automata) {
+                                                const Automata &automata) {
   std::vector<std::size_t> res = {0};
 
   std::random_device rd;
@@ -87,8 +87,9 @@ std::vector<std::size_t> GetRandomStateSequence(const ReachabilityMatrix &reacha
   auto min_states_count = std::uniform_int_distribution<std::int32_t>(0, 20)(generator);
 
   for (std::size_t i = 0; i < static_cast<std::size_t>(min_states_count); i++) {
-    const auto& current_state_reachability = reachability[res.back()];
-    auto next = std::uniform_int_distribution<std::int32_t>(0, current_state_reachability.size()-1)(generator);
+    const auto &current_state_reachability = reachability[res.back()];
+    auto next = std::uniform_int_distribution<std::int32_t>(
+        0, current_state_reachability.size() - 1)(generator);
     res.push_back(next);
   }
   if (!automata.accepting_states.contains(res.back())) {
@@ -105,7 +106,7 @@ std::vector<std::size_t> GetRandomStateSequence(const ReachabilityMatrix &reacha
   return res;
 }
 
-std::string GetRandomSegment(std::size_t start, std::size_t end, const Automata& a) {
+std::string GetRandomSegment(std::size_t start, std::size_t end, const Automata &a) {
   std::queue<std::size_t> q;
   std::vector<std::int32_t> used(a.states.size(), -1);
   q.push(static_cast<int32_t>(start));
@@ -120,7 +121,8 @@ std::string GetRandomSegment(std::size_t start, std::size_t end, const Automata&
         std::random_device rd;
         std::mt19937 generator(rd());
         auto transition = a.transitions[prev][cur];
-        auto symbol = transition[std::uniform_int_distribution<std::int32_t>(0, transition.size()-1)(generator)];
+        auto symbol = transition[std::uniform_int_distribution<std::int32_t>(
+            0, transition.size() - 1)(generator)];
         out << symbol;
         cur = prev;
       }
@@ -138,6 +140,15 @@ std::string GetRandomSegment(std::size_t start, std::size_t end, const Automata&
   throw std::logic_error{"GetRandomSegment failed"};
 }
 
+std::string GetRandomString(const Automata& a, const std::vector<std::size_t>& states) {
+  std::ostringstream res;
+  for (std::size_t i = 0; i < states.size()-1; i++) {
+    auto [l, r] = std::array{states[i], states[i+1]};
+    res << GetRandomSegment(l, r, a);
+  }
+  return res.str();
+}
+
 TEST(StringGeneratorTest, ReadsAutomata) {
   istringstream input{"2\n(bb)* b(bb)*\n1 0\n0 ab\nb 0\n"};
 
@@ -146,8 +157,8 @@ TEST(StringGeneratorTest, ReadsAutomata) {
   ASSERT_THAT(got, Eq(Automata{{"(bb)*", "b(bb)*"},
                                {0},
                                {
-                 {"0", "ab"},
-                 {"b", "0"},
+                                   {"0", "ab"},
+                                   {"b", "0"},
                                }}));
 }
 
@@ -179,7 +190,7 @@ TEST(StringGeneratorTest, BuildsRandomStateSequence) {
   EXPECT_THAT(a.accepting_states, Contains(got.back()));
 }
 
-TEST(StringGeneratorTest, BuildsStringsFromTwoStates) {
+TEST(StringGeneratorTest, BuildsSegmentFromTwoStates) {
   Automata a{{"(bb)*", "b(bb)*"},
              {0},
              {
@@ -190,4 +201,18 @@ TEST(StringGeneratorTest, BuildsStringsFromTwoStates) {
   auto got = GetRandomSegment(0, 1, a);
 
   ASSERT_THAT(got, MatchesRegex(R"(a|b(b(a|b))*)"));
+}
+
+TEST(StringGeneratorTest, BuildsRandomStringFromStateSequence) {
+  Automata a{{"(bb)*", "b(bb)*"},
+             {0},
+             {
+                 {"0", "ab"},
+                 {"b", "0"},
+             }};
+  auto states = GetRandomStateSequence(GetReachabilityMatrix(a), a);
+
+  auto got = GetRandomString(a, states);
+
+  ASSERT_THAT(got, MatchesRegex(R"(((a|b)b)*)"));
 }
