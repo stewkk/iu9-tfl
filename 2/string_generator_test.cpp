@@ -10,10 +10,13 @@
 #include <unordered_set>
 #include <vector>
 
-using std::istringstream;
 using testing::Contains;
 using testing::Eq;
+using testing::Gt;
 using testing::MatchesRegex;
+
+static std::random_device rd;
+static std::mt19937 generator(rd());
 
 struct Automata {
   std::vector<std::string> states;
@@ -81,9 +84,6 @@ std::vector<std::size_t> GetRandomStateSequence(const ReachabilityMatrix &reacha
                                                 const Automata &automata) {
   std::vector<std::size_t> res = {0};
 
-  std::random_device rd;
-  std::mt19937 generator(rd());
-
   auto min_states_count = std::uniform_int_distribution<std::int32_t>(0, 20)(generator);
 
   for (std::size_t i = 0; i < static_cast<std::size_t>(min_states_count); i++) {
@@ -118,8 +118,6 @@ std::string GetRandomSegment(std::size_t start, std::size_t end, const Automata 
       std::ostringstream out;
       auto prev = used[cur];
       while (prev != cur) {
-        std::random_device rd;
-        std::mt19937 generator(rd());
         auto transition = a.transitions[prev][cur];
         auto symbol = transition[std::uniform_int_distribution<std::int32_t>(
             0, transition.size() - 1)(generator)];
@@ -140,17 +138,137 @@ std::string GetRandomSegment(std::size_t start, std::size_t end, const Automata 
   throw std::logic_error{"GetRandomSegment failed"};
 }
 
-std::string GetRandomString(const Automata& a, const std::vector<std::size_t>& states) {
+std::vector<std::string> GetRandomSegments(const Automata &a,
+                                           const std::vector<std::size_t> &states) {
+  std::vector<std::string> segments;
+  for (std::size_t i = 0; i < states.size() - 1; i++) {
+    auto [l, r] = std::pair{states[i], states[i + 1]};
+    segments.push_back(GetRandomSegment(l, r, a));
+  }
+  return segments;
+}
+
+std::string GetRandomString(const Automata &a, const std::vector<std::size_t> &states) {
   std::ostringstream res;
-  for (std::size_t i = 0; i < states.size()-1; i++) {
-    auto [l, r] = std::array{states[i], states[i+1]};
-    res << GetRandomSegment(l, r, a);
+  for (const auto &el : GetRandomSegments(a, states)) {
+    res << el;
   }
   return res.str();
 }
 
+char ChooseRandomSymbolFromString(std::string s) {
+  std::sort(s.begin(), s.end());
+  auto last = std::unique(s.begin(), s.end());
+  auto to_replace = std::uniform_int_distribution<std::int32_t>(
+      0, static_cast<std::int32_t>(last - s.begin()) - 1)(generator);
+  return s[to_replace];
+}
+
+std::string ReplaceSymbol(std::string s) {
+  auto where = std::uniform_int_distribution<std::int32_t>(
+      0, static_cast<std::int32_t>(s.size()) - 1)(generator);
+  s[where] = ChooseRandomSymbolFromString(s);
+  return s;
+}
+
+std::string AddSymbol(std::string s) {
+  auto where = std::uniform_int_distribution<std::int32_t>(
+      0, static_cast<std::int32_t>(s.size()) - 1)(generator);
+  s.insert(where, std::string{ChooseRandomSymbolFromString(s)});
+  return s;
+}
+
+std::string ReverseString(std::string s) {
+  std::reverse(s.begin(), s.end());
+  return s;
+}
+
+std::string SwapSymbols(std::string s) {
+  auto l = std::uniform_int_distribution<std::int32_t>(
+      0, static_cast<std::int32_t>(s.size()) - 1)(generator);
+  auto r = std::uniform_int_distribution<std::int32_t>(
+      0, static_cast<std::int32_t>(s.size()) - 1)(generator);
+  std::swap(s[l], s[r]);
+  return s;
+}
+
+std::string SwapFragments(std::string s) {
+  auto m = std::uniform_int_distribution<std::int32_t>(
+      0, static_cast<std::int32_t>(s.size()) - 1)(generator);
+  std::ostringstream out;
+  out << s.substr(0, m) << s.substr(m, s.size() - m);
+  return out.str();
+}
+
+std::string SymbolRepetition(std::string s) {
+  auto where = std::uniform_int_distribution<std::int32_t>(
+      0, static_cast<std::int32_t>(s.size()) - 1)(generator);
+  s.insert(where + 1, std::string{s[where]});
+  return s;
+}
+
+std::string FragmentRepetition(std::string s) {
+  auto from = std::uniform_int_distribution<std::int32_t>(
+      0, static_cast<std::int32_t>(s.size()) - 1)(generator);
+  auto count = std::uniform_int_distribution<std::int32_t>(
+      1, static_cast<std::int32_t>(s.size() - from))(generator);
+  return s.insert(from, s.substr(from, count));
+}
+
+std::string ErasingSymbol(std::string s) {
+  auto where = std::uniform_int_distribution<std::int32_t>(
+      0, static_cast<std::int32_t>(s.size()) - 1)(generator);
+  return s.erase(where, 1);
+}
+
+std::string ErasingFragment(std::string s) {
+  auto from = std::uniform_int_distribution<std::int32_t>(
+      0, static_cast<std::int32_t>(s.size()) - 1)(generator);
+  auto count = std::uniform_int_distribution<std::int32_t>(
+      1, static_cast<std::int32_t>(s.size() - from))(generator);
+  return s.erase(from, count);
+}
+
+std::string ApplyRandomMutation(std::string s) {
+  const std::vector mutations
+      = {ReplaceSymbol,    AddSymbol,          ReverseString, SwapSymbols,    SwapFragments,
+         SymbolRepetition, FragmentRepetition, ErasingSymbol, ErasingFragment};
+  auto i = std::uniform_int_distribution<std::int32_t>(0, mutations.size() - 1)(generator);
+  return (mutations[i])(s);
+}
+
+std::vector<std::string> GetRandomStrings(const Automata &a,
+                                          const std::vector<std::size_t> &states) {
+  const std::size_t strings_count = 10;
+
+  std::vector<std::string> res;
+  auto segments = GetRandomSegments(a, states);
+  {
+    std::ostringstream out;
+    for (const auto &el : segments) {
+      out << el;
+    }
+    res.push_back(out.str());
+  }
+  for (std::size_t i = 1; i < strings_count; i++) {
+    std::ostringstream out;
+    for (const auto &segment : segments) {
+      if (segment.empty()) {
+        continue;
+      }
+      if (std::uniform_int_distribution<std::int32_t>(0, 4)(generator) == 0) {
+        out << ApplyRandomMutation(segment);
+      } else {
+        out << segment;
+      }
+    }
+    res.push_back(out.str());
+  }
+  return res;
+}
+
 TEST(StringGeneratorTest, ReadsAutomata) {
-  istringstream input{"2\n(bb)* b(bb)*\n1 0\n0 ab\nb 0\n"};
+  std::istringstream input{"2\n(bb)* b(bb)*\n1 0\n0 ab\nb 0\n"};
 
   auto got = ReadAutomata(input);
 
@@ -215,4 +333,18 @@ TEST(StringGeneratorTest, BuildsRandomStringFromStateSequence) {
   auto got = GetRandomString(a, states);
 
   ASSERT_THAT(got, MatchesRegex(R"(((a|b)b)*)"));
+}
+
+TEST(StringGeneratorTest, BuildsRandomStringsFromStateSequence) {
+  Automata a{{"(bb)*", "b(bb)*"},
+             {0},
+             {
+                 {"0", "ab"},
+                 {"b", "0"},
+             }};
+  auto states = GetRandomStateSequence(GetReachabilityMatrix(a), a);
+
+  auto got = GetRandomStrings(a, states);
+
+  ASSERT_THAT(got.size(), Gt(0));
 }
