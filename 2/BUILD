@@ -5,8 +5,14 @@ cc_binary(
 
 cc_binary(
   name = "string_generator",
-  srcs = ["string_generator.cpp"],
+  srcs = ["string_generator_main.cpp"],
   deps = [":string_generator_lib"],
+)
+
+cc_binary(
+  name = "fuzz",
+  srcs = ["fuzz.cpp"],
+  deps = [":string_generator_lib"]
 )
 
 cc_library(

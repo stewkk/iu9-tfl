@@ -66,13 +66,16 @@ std::vector<std::size_t> GetRandomStateSequence(const ReachabilityMatrix &reacha
                                                        const Automata &automata) {
   std::vector<std::size_t> res = {0};
 
-  auto min_states_count = std::uniform_int_distribution<std::int32_t>(0, 20)(generator);
+  auto min_states_count = std::uniform_int_distribution<std::int32_t>(5, 30)(generator);
 
   for (std::size_t i = 0; i < static_cast<std::size_t>(min_states_count); i++) {
     const auto &current_state_reachability = reachability[res.back()];
+    if (current_state_reachability.size() == 0) {
+      break;
+    }
     auto next = std::uniform_int_distribution<std::int32_t>(
         0, current_state_reachability.size() - 1)(generator);
-    res.push_back(next);
+    res.push_back(current_state_reachability[next]);
   }
   if (!automata.accepting_states.contains(res.back())) {
     for (auto next : reachability[res.back()]) {
@@ -92,19 +95,21 @@ std::string GetRandomSegment(std::size_t start, std::size_t end, const Automata 
   std::queue<std::size_t> q;
   std::vector<std::int32_t> used(a.states.size(), -1);
   q.push(static_cast<int32_t>(start));
-  used[start] = start;
+  used[start] = -2;
   while (!q.empty()) {
     auto cur = q.front();
     q.pop();
+    // TODO: кажется, восстанавливать ответ надо более умным способом
     if (cur == end) {
       std::ostringstream out;
       auto prev = used[cur];
-      while (prev != cur) {
+      while (prev != -2) {
         auto transition = a.transitions[prev][cur];
         auto symbol = transition[std::uniform_int_distribution<std::int32_t>(
             0, transition.size() - 1)(generator)];
         out << symbol;
         cur = prev;
+        prev = used[cur];
       }
       auto tmp = out.str();
       std::reverse(tmp.begin(), tmp.end());
@@ -249,10 +254,3 @@ std::vector<std::string> GetRandomStrings(const Automata &a,
   return res;
 }
 
-std::int32_t main() {
-    auto automata = ReadAutomata(std::cin);
-    for (const auto& el : GetRandomStrings(automata, GetRandomStateSequence(GetReachabilityMatrix(automata), automata))) {
-        std::cout << el << '\n';
-    }
-    return 0;
-}

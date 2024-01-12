@@ -51,7 +51,7 @@ void RegexGenerator::Regex(std::ostringstream& stream, std::int32_t letters_left
     }
     return;
   }
-  const auto rnd_value = Random({0.25, 0.1, 0.35, 0.3});
+  const auto rnd_value = Random({0.35, 0.1, 0.45, 0.1});
   switch (rnd_value) {
     case 0:
       Regex(stream, letters_left - 1);
@@ -112,8 +112,12 @@ RegexGenerator::RegexGenerator(std::int32_t alphabet_power, std::int32_t star_he
                                std::int32_t max_letters)
     : alphabet_power_(alphabet_power), star_height_(star_height), max_letters_(max_letters) {}
 
-std::int32_t main() {
-  RegexGenerator generator(2, 2, 1000);
+std::int32_t main(int argc, char** argv) {
+  if (argc != 4) {
+    std::cerr << "regex_generator [alphabet_power] [star_height] [max_letters]" << std::endl;
+    return 1;
+  }
+  RegexGenerator generator(std::stoi(argv[1]), std::stoi(argv[2]), std::stoi(argv[3]));
   std::cout << generator.GenerateString() << std::endl;
   return 0;
 }
