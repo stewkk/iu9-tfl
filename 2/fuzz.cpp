@@ -36,18 +36,6 @@ std::int32_t main() {
       if (is_matched_by_automata != is_matched_by_regex) {
           std::cout << "FAIL: " << automata.states.front() << ' ' << regex << ' ' << is_matched_by_automata << ' ' << is_matched_by_regex << ' ' << str << '\n';
       } else {
-          for (auto& row : automata.transitions) {
-              for (auto& el : row) {
-                  std::cout << el << ' ';
-              }
-              std::cout << std::endl;
-          }
-          for (auto row : GetReachabilityMatrix(automata)) {
-              for (auto el : row) {
-                  std::cout << el << ' ';
-              }
-              std::cout << std::endl;
-          }
           std::cout << "Pass: " << automata.states.front() << ' ' << regex << ' ' << str << '\n';
       }
     }
