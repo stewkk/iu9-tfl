@@ -1,9 +1,16 @@
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
+#include <iostream>
+#include <unordered_map>
+#include <utility>
+#include <string>
+#include <vector>
+#include <regex>
+#include <stdexcept>
 
 #include <fmt/format.h>
+#include <range/v3/range/conversion.hpp>
+#include <range/v3/view/join.hpp>
 
-using testing::Eq;
+using namespace ranges;
 
 using Domino = std::pair<std::string, std::string>;
 
@@ -75,6 +82,9 @@ std::vector<std::string> GetRules(const std::vector<Domino>& input) {
             }
         }
     }
+    for (const auto& [letter, equation] : equations_by_letters) {
+        res.push_back(fmt::format("(assert (= {} {}))", equation.first, equation.second));
+    }
 
     // Связь mi с ni отдельно для группы с префиксами, группы с суффиксами, префикс и суффиксами, средними элементами
     for (std::size_t i = 0; i < input.size(); i++) {
@@ -87,17 +97,49 @@ std::vector<std::string> GetRules(const std::vector<Domino>& input) {
     return res;
 }
 
-static const std::vector<Domino> MOCK_INPUT = {
-        {"ab", "a"},
-        {"aa", "b"},
-        {"bb", "a"},
-    };
+std::int32_t main() {
+    /*
+    ** TODO
+    ** 1. [X] Parse input for rules in format (aa, bb)
+    ** 2. [X] Pass into GetRules
+    ** 3. [X] Output header
+    ** 4. [X] Output rules
+    ** 5. [X] Output footer
+        */
+    std::vector<Domino> input;
+    input.reserve(100);
+    std::string line;
+    while (std::getline(std::cin, line)) {
+        if (std::all_of(line.begin(), line.end(), isspace)) {
+            continue;
+        }
+        std::regex input_pattern(R"(\s*\((.?.*),(.?.*)\)\s*)",
+                                 std::regex::ECMAScript);
+        std::smatch match;
 
-TEST(SmtTest, DefinesVariables) {
-    auto res = GetRules(MOCK_INPUT);
+        if (!std::regex_match(line, match, input_pattern)) {
+            throw std::invalid_argument("Invalid input format");
+        }
+        std::string l = match[1].str();
+        std::string r = match[2].str();
+        input.push_back({l, r});
+    }
+    if (input.size() == 0) {
+        throw std::invalid_argument("Empty input");
+    }
 
-    EXPECT_THAT(res[0], Eq("(declare-fun m0 () Int)"));
-    EXPECT_THAT(res[1], Eq("(assert (>= m0 0))"));
-    EXPECT_THAT(res[2], Eq("(declare-fun n00 () Int)"));
-    EXPECT_THAT(res[3], Eq("(assert (>= n00 0))"));
+    const auto rules = GetRules(input);
+
+    std::cout << R"(
+(set-logic QF_NIA)
+)";
+
+    std::cout << (rules | views::join('\n') | to<std::string>()) << '\n';
+
+    std::cout << R"(
+(check-sat)
+(get-model)
+)";
+
+    return 0;
 }
