@@ -27,14 +27,6 @@ std::unordered_map<char, std::int32_t> CountLetterOccurences(const std::string& 
 }
 
 std::vector<std::string> GetRules(const std::vector<Domino>& input) {
-    /*
-    ** TODO
-    ** 1. [X] Объявить переменные m и n
-    ** 2. [X] Наложить ограничения на m и n (>= 0)
-    ** 3. Уравнения на баланс правил по буквам
-    ** 4. Уравнения на равенство количества правил и их количества в связях
-    ** 5. Уравнения для крайних пар?
-        */
 
     std::vector<std::string> res;
     res.reserve(input.size()*4);
@@ -86,7 +78,6 @@ std::vector<std::string> GetRules(const std::vector<Domino>& input) {
         res.push_back(fmt::format("(assert (= {} {}))", equation.first, equation.second));
     }
 
-    // Связь mi с ni отдельно для группы с префиксами, группы с суффиксами, префикс и суффиксами, средними элементами
     for (std::size_t i = 0; i < input.size(); i++) {
         for (std::size_t j = 0; j < input.size(); j++) {
             res.push_back(fmt::format("(assert (and (>= n{}{} (- m{} 1)) (<= n{}{} m{})))", i, j, i, i, j, i));
@@ -98,14 +89,6 @@ std::vector<std::string> GetRules(const std::vector<Domino>& input) {
 }
 
 std::int32_t main() {
-    /*
-    ** TODO
-    ** 1. [X] Parse input for rules in format (aa, bb)
-    ** 2. [X] Pass into GetRules
-    ** 3. [X] Output header
-    ** 4. [X] Output rules
-    ** 5. [X] Output footer
-        */
     std::vector<Domino> input;
     input.reserve(100);
     std::string line;
