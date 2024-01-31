@@ -36,7 +36,7 @@ std::int32_t main() {
       if (is_matched_by_automata != is_matched_by_regex) {
           std::cout << "FAIL: " << automata.states.front() << ' ' << regex << ' ' << is_matched_by_automata << ' ' << is_matched_by_regex << ' ' << str << '\n';
       } else {
-          std::cout << "Pass: " << automata.states.front() << ' ' << regex << ' ' << str << '\n';
+          std::cout << "Pass: " << is_matched_by_automata << ' ' << automata.states.front() << ' ' << regex << ' ' << str << '\n';
       }
     }
     return 0;

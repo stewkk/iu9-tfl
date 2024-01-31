@@ -9,6 +9,8 @@ while true
 do
 
     regex=$(bazel-bin/regex_generator 3 2 10)
+    echo ""
+    echo "regex is $regex"
     adderalbaby=$(python3 adderalbaby/manual.py <<EOF
 abc
 $regex

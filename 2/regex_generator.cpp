@@ -16,9 +16,7 @@ private:
   std::int32_t star_height_;
   std::int32_t max_letters_;
 
-  std::int32_t current_star_height_;
-
-  void Regex(std::ostringstream& stream, std::int32_t letters_left);
+  void Regex(std::ostringstream& stream, std::int32_t letters_left, std::int32_t star_height);
   void Binary(std::ostringstream& stream);
   void Unary(std::ostringstream& stream);
   void Symbol(std::ostringstream& stream);
@@ -40,13 +38,12 @@ std::int32_t Random(std::vector<double> probs) {
   throw std::logic_error{"Random error"};
 }
 
-void RegexGenerator::Regex(std::ostringstream& stream, std::int32_t letters_left) {
+void RegexGenerator::Regex(std::ostringstream& stream, std::int32_t letters_left, std::int32_t star_height) {
   assert(letters_left > 0);
   if (letters_left == 1) {
     Symbol(stream);
     if (const auto rnd_value = Random({0.5, 0.5});
-        current_star_height_ + 1 <= star_height_ && rnd_value == 0) {
-      current_star_height_++;
+        star_height + 1 <= star_height_ && rnd_value == 0) {
       Unary(stream);
     }
     return;
@@ -54,19 +51,20 @@ void RegexGenerator::Regex(std::ostringstream& stream, std::int32_t letters_left
   const auto rnd_value = Random({0.35, 0.1, 0.45, 0.1});
   switch (rnd_value) {
     case 0:
-      Regex(stream, letters_left - 1);
+      Regex(stream, letters_left - 1, star_height);
       Binary(stream);
-      Regex(stream, 1);
+      Regex(stream, 1, star_height);
       break;
     case 1:
       stream << '(';
-      Regex(stream, letters_left);
+      Regex(stream, letters_left, star_height);
       stream << ')';
       break;
     case 2:
-      if (current_star_height_ + 1 <= star_height_) {
-        current_star_height_++;
-        Regex(stream, letters_left);
+      if (star_height + 1 <= star_height_) {
+        stream << '(';
+        Regex(stream, letters_left, star_height+1);
+        stream << ')';
         Unary(stream);
       } else {
         Symbol(stream);
@@ -90,7 +88,8 @@ void RegexGenerator::Binary(std::ostringstream& stream) {
   }
 }
 
-void RegexGenerator::Unary(std::ostringstream& stream) { stream << '*'; }
+void RegexGenerator::Unary(std::ostringstream& stream) {
+  stream << '*'; }
 
 void RegexGenerator::Symbol(std::ostringstream& stream) {
   const double p = 1.0 / alphabet_power_;
@@ -102,9 +101,8 @@ void RegexGenerator::Symbol(std::ostringstream& stream) {
 }
 
 std::string RegexGenerator::GenerateString() {
-  current_star_height_ = 0;
   std::ostringstream res;
-  Regex(res, max_letters_);
+  Regex(res, max_letters_, 0);
   return res.str();
 }
 
@@ -114,7 +112,6 @@ RegexGenerator::RegexGenerator(std::int32_t alphabet_power, std::int32_t star_he
 
 std::int32_t main(int argc, char** argv) {
   if (argc != 4) {
-    std::cerr << "regex_generator [alphabet_power] [star_height] [max_letters]" << std::endl;
     return 1;
   }
   RegexGenerator generator(std::stoi(argv[1]), std::stoi(argv[2]), std::stoi(argv[3]));
