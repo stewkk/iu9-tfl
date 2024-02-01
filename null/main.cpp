@@ -56,22 +56,29 @@ std::vector<std::string> GetRules(const std::vector<Domino>& input) {
         auto& [lhs, rhs] = input[i];
         auto occurences_count_lhs = CountLetterOccurences(lhs);
         auto occurences_count_rhs = CountLetterOccurences(rhs);
-        for (const auto& [letter, lhs] : occurences_count_lhs) {
+        auto occurences_count_both = CountLetterOccurences(lhs+rhs);
+        for (const auto& [letter, _] : occurences_count_both) {
             if (!equations_by_letters.contains(letter)) {
                 equations_by_letters[letter] = {"0", "0"};
             }
             auto& [equations_lhs, equations_rhs] = equations_by_letters[letter];
+            auto lhs_it = occurences_count_lhs.find(letter);
             auto rhs_it = occurences_count_rhs.find(letter);
             if (rhs_it == occurences_count_rhs.end()) {
-                equations_lhs = fmt::format("(+ {} {})", equations_lhs, fmt::format("(* {} m{})", lhs, i));
+                equations_lhs = fmt::format("(+ {} {})", equations_lhs, fmt::format("(* {} m{})", lhs_it->second, i));
                 continue;
             }
-            auto rhs = rhs_it->second;
-            if (lhs > rhs) {
-                equations_lhs = fmt::format("(+ {} {})", equations_lhs, fmt::format("(* {} m{})", lhs-rhs, i));
-            } else if (rhs > lhs) {
-                equations_rhs = fmt::format("(+ {} {})", equations_rhs, fmt::format("(* {} m{})", rhs-lhs, i));
+            if (lhs_it == occurences_count_lhs.end()) {
+                equations_rhs = fmt::format("(+ {} {})", equations_rhs, fmt::format("(* {} m{})", rhs_it->second, i));
+                continue;
             }
+            auto lhs = lhs_it->second;
+            auto rhs = rhs_it->second;
+            if (lhs == rhs) {
+                continue;
+            }
+            equations_lhs = fmt::format("(+ {} {})", equations_lhs, fmt::format("(* {} m{})", lhs, i));
+            equations_rhs = fmt::format("(+ {} {})", equations_rhs, fmt::format("(* {} m{})", rhs, i));
         }
     }
     for (const auto& [letter, equation] : equations_by_letters) {
@@ -96,7 +103,7 @@ std::int32_t main() {
         if (std::all_of(line.begin(), line.end(), isspace)) {
             continue;
         }
-        std::regex input_pattern(R"(\s*\((.?.*),(.?.*)\)\s*)",
+        std::regex input_pattern(R"(\s*\(\s*(.?.*)\s*,\s*(.?.*)\s*\)\s*)",
                                  std::regex::ECMAScript);
         std::smatch match;
 
