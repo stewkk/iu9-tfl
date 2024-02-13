@@ -1,8 +1,5 @@
 #!/usr/bin/env sh
 
-set -e
-set -o pipefail
-
 bazel build //:regex_generator //:string_generator //:fuzz > /dev/null 2>&1
 
 while true
@@ -11,11 +8,16 @@ do
     regex=$(bazel-bin/regex_generator 3 2 10)
     echo ""
     echo "regex is $regex"
-    adderalbaby=$(python3 adderalbaby/manual.py <<EOF
+    adderalbaby_input=$(cat <<EOF
 abc
 $regex
 EOF
-               )
+                     )
+    adderalbaby=$(echo "$adderalbaby_input" | timeout 2 python3 adderalbaby/manual.py)
+    if [ $? -ne 0 ] ; then
+        echo 'FAIL'
+        continue
+    fi
     automata=$(echo "$adderalbaby" | head --lines -1 -)
     canonical_regex=$(echo "$adderalbaby" | tail --lines 1 -)
     for (( i = 1; i <= 5; i++ ))

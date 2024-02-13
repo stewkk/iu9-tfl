@@ -114,7 +114,7 @@ def main(alphabet, initial_regex):
     # print(minRegex)
     regex = Regex()
     machine = GraphMachine(model= regex, states=states, transitions=transitions, initial='INPUT',show_conditions=True)
-    regex.get_graph().draw('final.png', prog= 'dot')
+    # regex.get_graph().draw('final.png', prog= 'dot')
 
     print(minRegex)
     return minRegex

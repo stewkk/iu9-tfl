@@ -6,6 +6,8 @@
 #include <sstream>
 #include <string>
 
+#define _GLIBCXX_REGEX_STATE_LIMIT 500000
+
 class RegexGenerator {
 public:
   RegexGenerator(std::int32_t alphabet_power, std::int32_t star_height, std::int32_t max_letters);
@@ -42,13 +44,13 @@ void RegexGenerator::Regex(std::ostringstream& stream, std::int32_t letters_left
   assert(letters_left > 0);
   if (letters_left == 1) {
     Symbol(stream);
-    if (const auto rnd_value = Random({0.5, 0.5});
+    if (const auto rnd_value = Random({0.2, 0.8});
         star_height + 1 <= star_height_ && rnd_value == 0) {
       Unary(stream);
     }
     return;
   }
-  const auto rnd_value = Random({0.35, 0.1, 0.45, 0.1});
+  const auto rnd_value = Random({0.3, 0.05, 0.05, 0.6});
   switch (rnd_value) {
     case 0:
       Regex(stream, letters_left - 1, star_height);
@@ -77,7 +79,7 @@ void RegexGenerator::Regex(std::ostringstream& stream, std::int32_t letters_left
 }
 
 void RegexGenerator::Binary(std::ostringstream& stream) {
-  const auto rnd_value = Random({0.5, 0.5});
+  const auto rnd_value = Random({0.8, 0.2});
   switch (rnd_value) {
     case 0:
       stream << '|';
