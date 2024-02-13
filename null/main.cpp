@@ -53,6 +53,9 @@ std::vector<std::string> GetRules(const std::vector<Domino>& input) {
                 res.push_back(fmt::format(kVariableLeAssertFmt, m));
             }
         }
+        res.push_back(fmt::format(kVariableDefinitionFmt, fmt::format("ns{}", i)));
+        res.push_back(fmt::format(kVariableGeAssertFmt, fmt::format("ns{}", i)));
+        res.push_back(fmt::format(kVariableLeAssertFmt, fmt::format("ns{}", i)));
     }
 
     // Сумма mi >= 1
@@ -67,6 +70,12 @@ std::vector<std::string> GetRules(const std::vector<Domino>& input) {
         sum_of_n0 = fmt::format("(+ {} {})", sum_of_n0, fmt::format("n{}{}", i, input.size()));
     }
     res.push_back(fmt::format("(assert (= {} 1))", sum_of_n0));
+
+    std::string sum_of_ns = "0";
+    for (std::size_t i = 0; i < input.size(); i++) {
+        sum_of_ns = fmt::format("(+ {} {})", sum_of_ns, fmt::format("ns{}", i));
+    }
+    res.push_back(fmt::format("(assert (= {} 1))", sum_of_ns));
 
     // Баланс букв по mi
     std::unordered_map<char, std::pair<std::string, std::string>> equations_by_letters;
@@ -110,13 +119,15 @@ std::vector<std::string> GetRules(const std::vector<Domino>& input) {
             sum = fmt::format("(+ n{}{} {})", i, j, sum);
         }
         res.push_back(fmt::format("(assert (= {} m{}))", sum, i));
+        res.push_back(fmt::format("(assert (<= n{}{} (- m{} 1)))", i, i, i));
     }
     for (std::size_t i = 0; i < input.size(); i++) {
         std::string sum = "0";
         for (std::size_t j = 0; j < input.size(); j++) {
             sum = fmt::format("(+ n{}{} {})", j, i, sum);
         }
-        res.push_back(fmt::format("(assert (or (= {} m{}) (= {} (- m{} 1))))", sum, i, sum, i));
+        sum = fmt::format("(+ ns{} {})", i, sum);
+        res.push_back(fmt::format("(assert (= {} m{}))", sum, i, sum, i));
     }
 
     // Баланс пар букв
