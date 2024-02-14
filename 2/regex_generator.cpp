@@ -50,7 +50,7 @@ void RegexGenerator::Regex(std::ostringstream& stream, std::int32_t letters_left
     }
     return;
   }
-  const auto rnd_value = Random({0.3, 0.05, 0.05, 0.6});
+  const auto rnd_value = Random({0.4, 0.1, 0.05, 0.4, 0.05});
   switch (rnd_value) {
     case 0:
       Regex(stream, letters_left - 1, star_height);
@@ -75,17 +75,22 @@ void RegexGenerator::Regex(std::ostringstream& stream, std::int32_t letters_left
     case 3:
       Symbol(stream);
       break;
+    case 4:
+      stream << "ε";
+      break;
   }
 }
 
 void RegexGenerator::Binary(std::ostringstream& stream) {
-  const auto rnd_value = Random({0.8, 0.2});
+  const auto rnd_value = Random({0.4, 0.2, 0.4});
   switch (rnd_value) {
     case 0:
       stream << '|';
       break;
     case 1:
       stream << '#';
+      break;
+    case 2:
       break;
   }
 }
