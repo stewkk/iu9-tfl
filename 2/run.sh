@@ -13,7 +13,7 @@ abc
 $regex
 EOF
                      )
-    adderalbaby=$(echo "$adderalbaby_input" | timeout 0.5 python3 adderalbaby/manual.py)
+    adderalbaby=$(echo "$adderalbaby_input" | timeout 0.5 python3 adderalbaby/manual.py 2>/dev/null)
     if [ $? -ne 0 ] ; then
         echo 'FAIL'
         continue
