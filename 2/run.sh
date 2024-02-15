@@ -5,7 +5,7 @@ bazel build //:regex_generator //:string_generator //:fuzz > /dev/null 2>&1
 while true
 do
 
-    regex=$(bazel-bin/regex_generator 3 2 10)
+    regex=$(bazel-bin/regex_generator 3 2 50)
     echo ""
     echo "regex is $regex"
     adderalbaby_input=$(cat <<EOF
@@ -13,7 +13,7 @@ abc
 $regex
 EOF
                      )
-    adderalbaby=$(echo "$adderalbaby_input" | timeout 2 python3 adderalbaby/manual.py)
+    adderalbaby=$(echo "$adderalbaby_input" | timeout 0.5 python3 adderalbaby/manual.py)
     if [ $? -ne 0 ] ; then
         echo 'FAIL'
         continue

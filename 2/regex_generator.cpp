@@ -50,7 +50,10 @@ void RegexGenerator::Regex(std::ostringstream& stream, std::int32_t letters_left
     }
     return;
   }
-  const auto rnd_value = Random({0.4, 0.1, 0.05, 0.4, 0.05});
+  auto rnd_value = Random({0.4, 0.1, 0.05, 0.4, 0.05});
+  if (max_letters_ - letters_left < 5) {
+    rnd_value = Random({0.75, 0.1, 0.05, 0.05, 0.05});
+  }
   switch (rnd_value) {
     case 0:
       Regex(stream, letters_left - 1, star_height);
