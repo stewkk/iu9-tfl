@@ -72,7 +72,7 @@ def main(alphabet, initial_regex):
     regex = Regex()
 
     machine = GraphMachine(model= regex, states=states, transitions=transitions, initial=initial_regex,show_conditions=True)
-    regex.get_graph().draw('prefinal.png', prog= 'dot')
+    # regex.get_graph().draw('prefinal.png', prog= 'dot')
 
     transitions = backend_elim.removeStates(transitions,states,initial_regex,final_states)
     regular = ''
