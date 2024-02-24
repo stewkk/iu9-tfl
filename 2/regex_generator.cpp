@@ -56,9 +56,9 @@ void RegexGenerator::Regex(std::ostringstream& stream, std::int32_t letters_left
   }
   switch (rnd_value) {
     case 0:
-      Regex(stream, letters_left - 1, star_height);
+      Regex(stream, letters_left/2, star_height);
       Binary(stream);
-      Regex(stream, 1, star_height);
+      Regex(stream, (letters_left+1)/2, star_height);
       break;
     case 1:
       stream << '(';

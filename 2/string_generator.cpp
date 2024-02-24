@@ -79,7 +79,6 @@ std::vector<std::size_t> GetRandomStateSequence(const ReachabilityMatrix &reacha
   }
   if (!automata.accepting_states.contains(res.back())) {
     for (auto next : reachability[res.back()]) {
-      // TODO: choose random final state here?
       if (automata.accepting_states.contains(next)) {
         res.push_back(next);
       }
@@ -99,17 +98,31 @@ std::string GetRandomSegment(std::size_t start, std::size_t end, const Automata 
   while (!q.empty()) {
     auto cur = q.front();
     q.pop();
-    // TODO: кажется, восстанавливать ответ надо более умным способом
     if (cur == end) {
       std::ostringstream out;
       auto prev = used[cur];
       while (prev != -2) {
+        if (auto transition = a.transitions[cur][cur]; transition.front() != '0' && std::uniform_int_distribution<std::int32_t>(
+              0, 1)(generator) == 0) {
+          auto symbol = transition[std::uniform_int_distribution<std::int32_t>(
+              0, transition.size() - 1)(generator)];
+          out << symbol;
+          continue;
+        }
         auto transition = a.transitions[prev][cur];
         auto symbol = transition[std::uniform_int_distribution<std::int32_t>(
             0, transition.size() - 1)(generator)];
         out << symbol;
         cur = prev;
         prev = used[cur];
+      }
+      if (auto transition = a.transitions[cur][cur]; transition.front() != '0') {
+        while (std::uniform_int_distribution<std::int32_t>(
+                 0, 1)(generator) == 0) {
+          auto symbol = transition[std::uniform_int_distribution<std::int32_t>(
+              0, transition.size() - 1)(generator)];
+          out << symbol;
+        }
       }
       auto tmp = out.str();
       std::reverse(tmp.begin(), tmp.end());
